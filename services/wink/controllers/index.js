@@ -1,6 +1,6 @@
 const uuid = require('uuid/v4');
 
-const { TheDiplomat, Nest } = require('../models');
+const { TheDiplomat, FamilyRoom } = require('../models');
 
 const deviceMap = {
   'The Diplomat': TheDiplomat,
@@ -10,7 +10,7 @@ module.exports = (io) => {
   io.on('connection', async (socket) => {
     console.log('trying...');
 
-    await Promise.all([TheDiplomat.ready(), Nest.ready()]);
+    await Promise.all([TheDiplomat.ready(), FamilyRoom.ready()]);
 
     console.log('ready!!!');
 

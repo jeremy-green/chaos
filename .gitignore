@@ -3,5 +3,9 @@ node_modules
 .DS_Store
 .nyc_output
 coverage
-config/local.json
-config/custom-environment-variables.json
+services/orchestrator/config/local.json
+services/router/config/local.json
+services/switches/config/local.json
+services/vacuums/config/local.json
+services/weather/config/local.json
+services/wink/config/local.json

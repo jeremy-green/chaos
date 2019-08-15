@@ -1,7 +1,11 @@
+const config = require('config');
+
 const BinarySwitch = require('./binary-switch');
 const Thermostat = require('./thermostat');
 
-const TheDiplomat = new BinarySwitch('The Diplomat');
-const Nest = new Thermostat('Fort Drive Family Room Thermostat');
+const { diplomat, familyRoom } = config.get('names');
 
-module.exports = { TheDiplomat, Nest };
+const TheDiplomat = new BinarySwitch(diplomat);
+const FamilyRoom = new Thermostat(familyRoom);
+
+module.exports = { TheDiplomat, FamilyRoom };
