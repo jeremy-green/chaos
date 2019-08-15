@@ -1,0 +1,54 @@
+{
+  "name": "chaos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint services",
+    "test": "NODE_CONFIG_DIR=./services/weather/config:./services/wink/config:./services/vacuums/config:./services/switches/config:./services/router/config nyc mocha --bail ./services/*/test/**/*.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-eslint": "^10.0.2",
+    "chai": "^4.2.0",
+    "commitizen": "^4.0.3",
+    "cz-conventional-changelog": "^3.0.2",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.18.2",
+    "express-generator": "^4.16.1",
+    "http-server": "^0.11.1",
+    "husky": "^3.0.2",
+    "lerna": "^3.16.4",
+    "mocha": "^6.2.0",
+    "nock": "^10.0.6",
+    "nyc": "^14.1.1",
+    "prettier": "^1.18.2",
+    "sinon": "^7.4.1",
+    "sinon-chai": "^3.3.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "prepare-commit-msg": "exec < /dev/tty && git cz --hook"
+    }
+  },
+  "nyc": {
+    "check-coverage": true,
+    "reporter": [
+      "text-summary",
+      "lcov"
+    ],
+    "exclude": [
+      "./services/*/test/**/*.js"
+    ],
+    "report-dir": "./coverage"
+  }
+}

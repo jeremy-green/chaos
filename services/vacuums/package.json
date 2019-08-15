@@ -1,0 +1,24 @@
+{
+  "name": "vacuums",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node app"
+  },
+  "dependencies": {
+    "backoff": "^2.5.0",
+    "config": "^3.2.2",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.1",
+    "node-machine-id": "^1.1.12",
+    "nodemon": "^1.19.1",
+    "reattempt": "^0.1.0",
+    "socket.io": "^2.2.0",
+    "sucks": "github:jeremy-green/sucks.js#master",
+    "uuid": "^3.3.2"
+  }
+}

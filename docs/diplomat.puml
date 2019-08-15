@@ -1,0 +1,9 @@
+@startuml
+
+    [*] --> On : Initial State
+    On -> On : API Failure
+    On -> Off : Precipitation
+    Off --> On : No Precipitation
+    Off --> Off : API Failure
+
+@enduml

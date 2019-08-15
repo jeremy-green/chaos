@@ -1,0 +1,17 @@
+{
+  "weather": {
+    "port": 81
+  },
+  "wink": {
+    "port": 82
+  },
+  "switches": {
+    "port": 83
+  },
+  "vacuums": {
+    "port": 84
+  },
+  "router": {
+    "port": 85
+  }
+}

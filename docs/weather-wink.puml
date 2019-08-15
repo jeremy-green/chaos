@@ -1,0 +1,25 @@
+@startuml
+    box "Weather" #LightBlue
+        participant WeatherAPI as "API"
+    end box
+
+    box "Services" #LightGreen
+        participant Weather
+        participant Chaos as "Orchestration"
+        participant Wink
+    end box
+
+    box "Wink"
+        participant WinkAPI as "API"
+    end box
+
+    WeatherAPI <- Weather : polling
+    WeatherAPI -> Weather
+
+    Weather -> Chaos : change
+    
+    Chaos -> Wink : publish
+
+    Wink -> WinkAPI : update
+    ' Wink <-- WinkAPI
+@enduml

@@ -1,0 +1,6 @@
+@startuml
+    [*] --> Deploy : Left Home
+    Deploy --> Dock : Finished
+    [*] --> Dock : Returned\nHome
+    Dock -> [*]
+@enduml

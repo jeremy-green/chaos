@@ -1,0 +1,22 @@
+@startuml
+    box "Alexa" #LightBlue
+        participant Alexa
+    end box
+
+    box "Services" #LightGreen
+        participant Switch
+        participant Chaos as "Orchestration"
+        participant Vacuums
+    end box
+
+    box "Deebots"
+        participant VacuumsAPI as "XMPP"
+    end box
+
+    [-> Alexa : event
+    Alexa -> Switch : change
+    Switch -> Chaos : update
+    Chaos -> Vacuums : publish
+    Vacuums -> VacuumsAPI : control
+
+@enduml

@@ -1,0 +1,7 @@
+{
+  "continent": "NA",
+  "country": "US",
+  "times": 10,
+  "delay": 1000,
+  "batterTolerance": 20
+}
