@@ -8,7 +8,7 @@ const router = socketController('router');
 
 router.on('connect', () => {
   console.log('router:connect');
-  router.on('whatup', d => console.log('whatup', d));
+  router.on('routerchange', d => console.log('routerchange', d));
 });
 
 vacuums.on('connect', () => {

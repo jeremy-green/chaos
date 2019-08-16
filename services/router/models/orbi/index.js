@@ -45,9 +45,13 @@ async function handleDelivery(e) {
 
   const { conn_orbi_name: router } = this.status;
 
-  if (router !== this.router && router !== routerMap.UNKNOWN) {
+  if (router !== this.router) {
     this.router = router;
-    this.emit('routerchange', this.router);
+    this.emit('routerchange', {
+      router: this.router,
+      name: this.name,
+      location: floorMap[this.router],
+    });
   }
 }
 
@@ -67,10 +71,11 @@ function timer(interval) {
 }
 
 class Orbi extends EventEmitter {
-  constructor(id) {
+  constructor(id, name) {
     super();
 
     this.id = id;
+    this.name = name;
     this.router = null;
     this.status = null;
     this.address = null;

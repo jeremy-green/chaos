@@ -1,5 +1,5 @@
 const uuid = require('uuid/v4');
 
-require('../models');
+const devices = require('../models');
 
-module.exports = io => io.on('connection', socket => socket.emit('whatup', { farts: 'butts', id: uuid() }));
+module.exports = io => io.on('connection', socket => devices.forEach(device => device.on('routerchange', info => socket.emit('routerchange', { ...info, id: uuid(), ts: Date.now() }))));
