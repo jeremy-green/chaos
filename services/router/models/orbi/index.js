@@ -54,7 +54,7 @@ async function handleDelivery(e) {
 function timer(interval) {
   setTimeout(async () => {
     try {
-      const url = `http://${user}:${pass}@orbilogin.com/DEV_device_info.htm?ts=${Date.now()}`;
+      const url = `http://${user}:${password}@orbilogin.com/DEV_device_info.htm?ts=${Date.now()}`;
       const txt = await fetch(url).then(res => res.text());
       vm.runInThisContext(txt); // defines `device` array
       eventEmitter.emit('delivery', device);
