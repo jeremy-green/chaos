@@ -58,8 +58,8 @@ setInterval(async () => {
   forecast = await Weather.call(apiKey, latlng);
   ({ currently } = forecast);
 
-  console.log(index);
-  console.log(currently);
+  // console.log(index);
+  // console.log(currently);
 
   const { precipProbability } = currently;
   let currentStatus = 'no_precipitation';
