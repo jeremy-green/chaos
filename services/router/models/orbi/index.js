@@ -11,7 +11,9 @@ const lookup = promisify(dns.lookup);
 
 const eventEmitter = new EventEmitter();
 
-const { routerMap, password, user } = config;
+const {
+  routerMap, password, user, confidenceThreshold, sampleSize, defaultInterval,
+} = config;
 
 const floorMap = {
   [routerMap.UNKNOWN]: 'unknown',
@@ -20,6 +22,22 @@ const floorMap = {
   [routerMap.BASEMENT]: 'basement',
   undefined: 'off network',
 };
+
+// https://stackoverflow.com/questions/17313268/idiomatically-find-the-number-of-occurrences-a-given-value-has-in-an-array
+class Counter extends Map {
+  constructor(iter, key = null) {
+    super();
+    this.key = key || (x => x);
+    for (const x of iter) {
+      this.add(x);
+    }
+  }
+
+  add(x) {
+    x = this.key(x);
+    this.set(x, (this.get(x) || 0) + 1);
+  }
+}
 
 async function getAddress(id) {
   try {
@@ -45,25 +63,54 @@ async function handleDelivery(e) {
 
   const { conn_orbi_name: router } = this.status;
 
-  if (router !== this.router) {
+  if (!this.router) {
     this.router = router;
-    this.emit('routerchange', {
-      router: this.router,
-      name: this.name,
-      location: floorMap[this.router],
-    });
+  }
+
+  this.counter.add(router);
+  this.index += 1;
+
+  if (this.index === sampleSize) {
+    // get the highest number of occurrences
+    const [[highestInstance, highestCount]] = [...Array.from(this.counter.entries())].sort(
+      (a, b) => b[1] - a[1],
+    );
+    const confidence = highestCount / sampleSize;
+
+    console.log(confidence, this.name, this.router, highestInstance);
+
+    this.counter = new Counter([]);
+    this.index = 0;
+
+    // @todo ugly, refactor
+    if (
+      confidence >= confidenceThreshold
+      && highestInstance !== this.router
+      && highestInstance !== routerMap.UNKNOWN
+    ) {
+      this.router = highestInstance;
+      this.emit('routerchange', {
+        router: this.router,
+        name: this.name,
+        location: floorMap[this.router],
+        confidence,
+      });
+    }
   }
 }
 
 function timer(interval) {
   setTimeout(async () => {
     try {
-      const url = `http://${user}:${password}@orbilogin.com/DEV_device_info.htm?ts=${Date.now()}`;
-      const txt = await fetch(url).then(res => res.text());
+      const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
+      const url = `http://orbilogin.com/DEV_device_info.htm?ts=${Date.now()}`;
+      const txt = await fetch(url, {
+        headers: { authorization },
+      }).then(res => res.text());
       vm.runInThisContext(txt); // defines `device` array
       eventEmitter.emit('delivery', device);
     } catch (e) {
-      /* noop */
+      // console.log(e);
     } finally {
       timer(interval);
     }
@@ -80,16 +127,19 @@ class Orbi extends EventEmitter {
     this.status = null;
     this.address = null;
 
+    this.counter = new Counter([]);
+    this.index = 0;
+
     eventEmitter.on('delivery', handleDelivery.bind(this));
   }
 }
 
 let init = false;
-module.exports = (interval = 5000) => {
+module.exports = (interval = defaultInterval) => {
   if (!init) {
     init = true;
     timer(interval);
   }
 
-  return { Orbi, routerMap, floorMap };
+  return Orbi;
 };
