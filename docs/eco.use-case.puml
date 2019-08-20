@@ -1,0 +1,24 @@
+@startuml
+    skinparam packageStyle rectangle
+
+    actor User1
+    ' actor User2
+    actor Alexa
+
+    rectangle Chaos {
+        (switches on)
+        (switches off)
+
+        User1 -- (switches on)
+        User1 -- (switches off)
+
+        ' User2 -- (switches on)
+        ' User2 -- (switches off)
+
+        (switches off) .right.> (set Eco) : <<includes>>
+        (switches on) .left.> (set Auto) : <<includes>>
+
+        (switches on) -- Alexa
+        (switches off) -- Alexa
+    }
+@enduml
