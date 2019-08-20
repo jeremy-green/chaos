@@ -1,1 +1,5 @@
-{}
+{
+  "sampleSize": 12,
+  "confidenceThreshold": 0.8,
+  "defaultInterval": 5000
+}
