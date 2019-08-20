@@ -6,24 +6,21 @@ const switches = socketController('switches');
 const vacuums = socketController('vacuums');
 const router = socketController('router');
 
-router.on('connect', () => {
-  console.log('router:connect');
-  router.on('routerchange', d => console.log('routerchange', d));
-});
+router
+  .on('connect', () => console.log('router:connect'))
+  .on('routerchange', d => console.log('routerchange', d));
 
-vacuums.on('connect', () => {
-  console.log('vacuums:connect');
-  vacuums.on('hello', d => console.log('hello', d));
-});
+vacuums
+  .on('connect', () => console.log('vacuums:connect'))
+  .on('hello', d => console.log('hello', d));
 
-switches.on('connect', () => {
-  console.log('switches:connect');
-  switches.on('change', d => console.log('change', d));
-});
+switches
+  .on('connect', () => console.log('switches:connect'))
+  .on('change', d => console.log('change', d));
 
-wink.on('connect', () => {
-  console.log('weather:connect');
-  weather.on('precipitation', (data) => {
+wink
+  .on('connect', () => console.log('weather:connect'))
+  .on('precipitation', (data) => {
     const { id, metadata } = data;
     const { currentStatus } = metadata;
 
@@ -34,4 +31,3 @@ wink.on('connect', () => {
 
     wink.emit('power', { devices: ['The Diplomat'], state: 'on', id });
   });
-});
