@@ -6,25 +6,25 @@ const stateMap = {
 };
 
 class Switch extends EventEmitter {
-  constructor(name) {
+  constructor(name, state) {
     super();
     this.name = name;
-    this.state = 1;
+    this.state = state;
     this.status = stateMap[this.state];
   }
 
-  handler(action) {
-    const status = stateMap[action];
-    this.status = status;
-    this.state = action;
+  handler(state) {
+    this.state = state;
+    this.status = stateMap[this.state];
 
-    this.emit('change', { status, action, name: this.name });
+    const { status, name } = this;
+    this.emit('change', { status, name, state });
   }
 
-  // statusHandler(callback) {
-  //   console.log(`${this.name}: ${this.status}`);
-  //   callback();
-  // }
+  statusHandler(callback) {
+    // allows initial state to be updated via a different service
+    callback(this.state);
+  }
 }
 
 module.exports = Switch;

@@ -73,8 +73,9 @@ setInterval(async () => {
   if (currentStatus !== status) {
     status = currentStatus;
     eventEmitter.emit('precipitation', {
-      metadata: { currentStatus, statusVal },
       ...currently,
+      currentStatus,
+      statusVal,
     });
   }
 

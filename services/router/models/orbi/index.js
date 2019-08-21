@@ -65,6 +65,12 @@ async function handleDelivery(e) {
 
   if (!this.router) {
     this.router = router;
+    this.emit('assigned', {
+      router: this.router,
+      name: this.name,
+      location: floorMap[this.router],
+      confidence: 1,
+    });
   }
 
   this.counter.add(router);
@@ -77,7 +83,7 @@ async function handleDelivery(e) {
     );
     const confidence = highestCount / sampleSize;
 
-    console.log(confidence, this.name, this.router, highestInstance);
+    // console.log(confidence, this.name, this.router, highestInstance);
 
     this.counter = new Counter([]);
     this.index = 0;
@@ -89,7 +95,7 @@ async function handleDelivery(e) {
       && highestInstance !== routerMap.UNKNOWN
     ) {
       this.router = highestInstance;
-      this.emit('routerchange', {
+      this.emit('change', {
         router: this.router,
         name: this.name,
         location: floorMap[this.router],

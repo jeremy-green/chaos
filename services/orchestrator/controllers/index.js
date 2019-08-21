@@ -8,7 +8,18 @@ const router = socketController('router');
 
 router
   .on('connect', () => console.log('router:connect'))
-  .on('routerchange', d => console.log('routerchange', d));
+  // assign initial state of Alexa virtual switches
+  .on('assigned', (data) => {
+    const { name, id, location } = data;
+
+    let state = 1;
+    if (location === 'off network') {
+      state = 0;
+    }
+
+    switches.emit('change', { name, id, state });
+  })
+  .on('change', d => console.log('change', d));
 
 vacuums
   .on('connect', () => console.log('vacuums:connect'))
@@ -23,13 +34,15 @@ wink.on('connect', () => console.log('wink:connect'));
 weather
   .on('connect', () => console.log('weather:connect'))
   .on('precipitation', (data) => {
-    const { id, metadata } = data;
-    const { currentStatus } = metadata;
+    const { id, currentStatus } = data;
 
+    const devices = ['The Diplomat'];
+
+    let state = 'on';
     if (currentStatus === 'precipitation') {
-      wink.emit('power', { devices: ['The Diplomat', 'Patio'], state: 'off', id });
-      return;
+      devices.push('Patio');
+      state = 'off';
     }
 
-    wink.emit('power', { devices: ['The Diplomat'], state: 'on', id });
+    wink.emit('power', { devices, state, id });
   });

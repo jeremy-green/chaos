@@ -5,10 +5,15 @@ const Switch = require('./switch');
 
 const { basePort, switchNames } = config;
 
-const switches = switchNames.reduce((acc, curr) => [...acc, new Switch(curr)], []);
+const switches = switchNames.reduce(
+  (acc, { name, state }) => [...acc, new Switch(name, state)],
+  [],
+);
 
 const devices = switches.reduce((acc, curr, index) => {
-  const { name, handler, state } = curr;
+  const {
+    name, handler, state, statusHandler,
+  } = curr;
   const port = basePort + index;
 
   return [
@@ -18,7 +23,7 @@ const devices = switches.reduce((acc, curr, index) => {
       port,
       state,
       handler: handler.bind(curr),
-      // statusHandler,
+      statusHandler: statusHandler.bind(curr),
     },
   ];
 }, []);
