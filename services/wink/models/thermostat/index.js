@@ -17,7 +17,7 @@ class Thermostat extends Wink {
 
   initializeDevice(data) {
     const deviceInfo = Wink.getDeviceInfo(data, this.name);
-    console.log(deviceInfo);
+    // console.log(deviceInfo);
     // const {
     //   uuid,
     //   desired_state: { powered },

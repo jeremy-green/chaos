@@ -18,14 +18,16 @@ switches
   .on('connect', () => console.log('switches:connect'))
   .on('change', d => console.log('change', d));
 
-wink
+wink.on('connect', () => console.log('wink:connect'));
+
+weather
   .on('connect', () => console.log('weather:connect'))
   .on('precipitation', (data) => {
     const { id, metadata } = data;
     const { currentStatus } = metadata;
 
     if (currentStatus === 'precipitation') {
-      wink.emit('power', { devices: ['The Diplomat'], state: 'off', id });
+      wink.emit('power', { devices: ['The Diplomat', 'Patio'], state: 'off', id });
       return;
     }
 
