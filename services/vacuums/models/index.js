@@ -7,7 +7,9 @@ const Reattempt = require('reattempt').default;
 
 const { EcoVacsAPI, VacBot } = sucks;
 
-const { continent, country, email, password, nickname, times, delay, batterTolerance } = config;
+const {
+  continent, country, email, password, nickname, times, delay, batterTolerance,
+} = config;
 
 const device_id = EcoVacsAPI.md5(nodeMachineId.machineIdSync());
 const api = new EcoVacsAPI(device_id, country, continent);
@@ -21,7 +23,10 @@ exponentialBackoff.failAfter(times);
 let batteryRemaining;
 (async () => {
   try {
-    await Reattempt.run({ times, delay }, async () => await api.connect(accountId, passwordHash));
+    await Reattempt.run(
+      { times: Infinity, delay },
+      async () => await api.connect(accountId, passwordHash),
+    );
 
     const devices = await api.devices();
 
