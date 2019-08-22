@@ -1,10 +1,10 @@
-const socketController = require('./socket-controller');
+const SocketController = require('./socket-controller');
 
-const weather = socketController('weather');
-const wink = socketController('wink');
-const switches = socketController('switches');
-const vacuums = socketController('vacuums');
-const router = socketController('router');
+const weather = SocketController('weather');
+const wink = SocketController('wink');
+const switches = SocketController('switches');
+const vacuums = SocketController('vacuums');
+const router = SocketController('router');
 
 router
   .on('connect', () => console.log('router:connect'))
