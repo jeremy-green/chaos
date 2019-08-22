@@ -16,6 +16,7 @@ class Thermostat extends Wink {
   }
 
   initializeDevice(data) {
+    // eslint-disable-next-line no-unused-vars
     const deviceInfo = Wink.getDeviceInfo(data, this.name);
     // console.log(deviceInfo);
     // const {

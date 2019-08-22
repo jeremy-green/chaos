@@ -16,6 +16,7 @@ const hours = 24;
 const interval = Math.floor((hours * minutes * seconds * milliseconds) / maxCallsPerDay);
 
 let today = new Date();
+// eslint-disable-next-line no-unused-vars
 let index = maxCallsPerDay;
 let currently;
 let status;

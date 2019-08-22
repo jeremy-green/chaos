@@ -114,6 +114,7 @@ function timer(interval) {
         headers: { authorization },
       }).then(res => res.text());
       vm.runInThisContext(txt); // defines `device` array
+      // eslint-disable-next-line no-undef
       eventEmitter.emit('delivery', device);
     } catch (e) {
       // console.log(e);

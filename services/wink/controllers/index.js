@@ -1,5 +1,3 @@
-const uuid = require('uuid/v4');
-
 const { TheDiplomat, FamilyRoom, Patio } = require('../models');
 
 const deviceMap = {
@@ -18,9 +16,7 @@ module.exports = (io) => {
     socket.on('power', (settings) => {
       const { devices, state, id } = settings;
       console.log('power', devices, state, id);
-      devices.forEach((device) => {
-        deviceMap[device].turn(state);
-      });
+      devices.forEach(device => deviceMap[device].turn(state));
     });
   });
 };
