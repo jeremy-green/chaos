@@ -2,6 +2,11 @@ const EventEmitter = require('events');
 
 const config = require('config');
 const fetch = require('node-fetch');
+const { Machine, interpret, assign } = require('xstate');
+
+const { states, actions } = require('./state');
+
+const { insert } = require('../datastore');
 
 const eventEmitter = new EventEmitter();
 
@@ -15,72 +20,83 @@ const minutes = 60;
 const hours = 24;
 const interval = Math.floor((hours * minutes * seconds * milliseconds) / maxCallsPerDay);
 
-let today = new Date();
-// eslint-disable-next-line no-unused-vars
-let index = maxCallsPerDay;
-let currently;
-let status;
-let forecast;
-
 class Weather {
+  // @todo I don't love this...                              👇
+  static #machine = interpret(new Machine({ ...states }, { ...actions(Weather.emit) })).start();
+
+  static update(name, data) {
+    this.#machine.send(name.toUpperCase(), { ...data });
+  }
+
+  static save(data) {
+    insert(data);
+  }
+
   static on(...args) {
     eventEmitter.on(...args);
+  }
+
+  static emit(name, data) {
+    eventEmitter.emit(name, { ...data });
   }
 
   static call(key, loc) {
     return fetch(`https://api.darksky.net/forecast/${key}/${loc}`).then(res => res.json());
   }
-
-  static getStatus() {
-    return status;
-  }
-
-  static getForecast() {
-    return forecast;
-  }
-
-  static getCurrent(prop) {
-    return currently[prop];
-  }
-
-  static getCurrently() {
-    return currently;
-  }
 }
 
-setInterval(async () => {
-  // reset maxCallsPerDay after midnight
-  const time = new Date();
-  if (time.getDate() !== today.getDate()) {
-    index = maxCallsPerDay;
-    today = time;
-  }
+interpret(
+  new Machine({
+    id: 'service',
+    context: {
+      date: new Date().getDate(),
+      index: maxCallsPerDay,
+      status: null,
+    },
+    initial: 'idle',
+    states: {
+      idle: {
+        after: {
+          [interval]: 'loading',
+        },
+      },
+      loading: {
+        invoke: {
+          async src({ date, index }) {
+            const { currently } = await Weather.call(apiKey, latlng);
+            const { precipProbability } = currently;
 
-  forecast = await Weather.call(apiKey, latlng);
-  ({ currently } = forecast);
+            const isPrecipitating = precipProbability > precipProbabilityThreshold;
+            const status = isPrecipitating ? 'precipitation' : 'no_precipitation';
 
-  // console.log(index);
-  // console.log(currently);
+            const todaysDate = new Date().getDate();
+            const indexDate = date !== todaysDate
+              ? { index: maxCallsPerDay, date: todaysDate }
+              : { index: index - 1, date };
 
-  const { precipProbability } = currently;
-  let currentStatus = 'no_precipitation';
-  let statusVal = false;
+            console.log(indexDate, currently, status);
 
-  if (precipProbability > precipProbabilityThreshold) {
-    currentStatus = 'precipitation';
-    statusVal = true;
-  }
-
-  if (currentStatus !== status) {
-    status = currentStatus;
-    eventEmitter.emit('precipitation', {
-      ...currently,
-      currentStatus,
-      statusVal,
-    });
-  }
-
-  index -= 1;
-}, interval);
+            return { ...indexDate, status, currently };
+          },
+          onDone: {
+            target: 'idle',
+            actions: [
+              assign({
+                index: (context, { data: { index } }) => index,
+                date: (context, { data: { date } }) => date,
+              }),
+              (context, { data: { status, currently } }) => Weather.update(status, { status, currently }),
+              (context, { data: { currently } }) => Weather.save(currently),
+            ],
+          },
+          onError: {
+            target: 'idle',
+            actions: () => console.log('error'),
+          },
+        },
+      },
+    },
+  }),
+).start();
 
 module.exports = Weather;
