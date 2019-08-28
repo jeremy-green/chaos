@@ -83,7 +83,7 @@ async function handleDelivery(e) {
     );
     const confidence = highestCount / sampleSize;
 
-    // console.log(confidence, this.name, this.router, highestInstance);
+    console.log(confidence, this.name, this.router, highestInstance);
 
     this.counter = new Counter([]);
     this.index = 0;
