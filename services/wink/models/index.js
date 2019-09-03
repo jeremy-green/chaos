@@ -1,12 +1,44 @@
 const config = require('config');
 
+const { Machine, interpret } = require('xstate');
+
 const BinarySwitch = require('./binary-switch');
 const Thermostat = require('./thermostat');
 
-const { diplomat, familyRoom, patio } = config.get('names');
+const { diplomat, thermostat: thermostatName, patio: patioName } = config.get('names');
 
-const TheDiplomat = new BinarySwitch(diplomat);
-const Patio = new BinarySwitch(patio);
-const FamilyRoom = new Thermostat(familyRoom);
+const theDiplomat = new BinarySwitch(diplomat);
+const patio = new BinarySwitch(patioName);
+const thermostat = new Thermostat(thermostatName);
 
-module.exports = { TheDiplomat, FamilyRoom, Patio };
+const powerDevices = {
+  on: [theDiplomat],
+  off: [theDiplomat, patio],
+};
+
+const updateDevices = {
+  auto: [thermostat],
+  eco: [thermostat],
+};
+
+interpret(
+  new Machine({
+    initial: 'bootstrap',
+    states: {
+      bootstrap: {
+        invoke: {
+          src: () => Promise.all([theDiplomat.ready(), thermostat.ready(), patio.ready()]),
+          onDone: {
+            target: 'ready',
+            actions: [() => console.log('ready!!!')],
+          },
+        },
+      },
+      ready: {
+        type: 'final',
+      },
+    },
+  }),
+).start();
+
+module.exports = { powerDevices, updateDevices };
