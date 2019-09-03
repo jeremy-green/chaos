@@ -17,7 +17,6 @@ class BinarySwitch extends Wink {
 
   initializeDevice(data) {
     const deviceInfo = Wink.getDeviceInfo(data, this.name);
-    // console.log(deviceInfo);
     const {
       uuid,
       desired_state: { powered },
@@ -27,7 +26,7 @@ class BinarySwitch extends Wink {
 
     const initial = powered === true ? 'up' : 'down';
     const context = { ref: this, deviceInfo };
-    const src = (_context, event) => Wink.updateDeviceState(_context.ref.type, _context.ref.uuid, {
+    const src = ({ ref }, event) => Wink.updateDeviceState(ref.type, ref.uuid, {
       powered: binaryStateMap[event.type],
     });
     const offLoading = getLoadingState('down', 'up', src);

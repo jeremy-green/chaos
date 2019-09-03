@@ -1,8 +1,18 @@
-// const { Machine, interpret } = require('xstate');
+const {
+  Machine, interpret, assign, actions, send,
+} = require('xstate');
 
 const Wink = require('../wink');
 
-// const { stateMap: binaryStateMap, machine: binaryMachine, getLoadingState } = require('./state');
+const eventMap = {
+  ECO: 'eco',
+  AUTO: 'auto',
+};
+
+function entry({ ref }, { type }) {
+  const mode = eventMap[type];
+  return Thermostat.updateDeviceState(ref.type, ref.uuid, { mode });
+}
 
 class Thermostat extends Wink {
   constructor(name) {
@@ -16,43 +26,50 @@ class Thermostat extends Wink {
   }
 
   initializeDevice(data) {
-    // eslint-disable-next-line no-unused-vars
     const deviceInfo = Wink.getDeviceInfo(data, this.name);
-    // console.log(deviceInfo);
-    // const {
-    //   uuid,
-    //   desired_state: { powered },
-    // } = deviceInfo;
-    //
-    // this.uuid = uuid;
-    //
-    // const initial = powered === true ? 'up' : 'down';
-    // const context = { ref: this, deviceInfo };
-    // const src = (_context, event) => Thermostat.updateDeviceState(
-    //   _context.ref.type,
-    //   _context.ref.uuid,
-    //   binaryStateMap[event.type],
-    // );
-    // const offLoading = getLoadingState('down', 'up', src);
-    // const onLoading = getLoadingState('up', 'down', src);
-    // binaryMachine.states = {
-    //   ...binaryMachine.states,
-    //   offLoading,
-    //   onLoading,
-    // };
-    //
-    // this.machine = Machine({
-    //   ...binaryMachine,
-    //   initial,
-    //   context,
-    // });
-    //
-    // this.service = interpret(this.machine).start();
+    const {
+      uuid,
+      desired_state: { mode },
+    } = deviceInfo;
+
+    this.uuid = uuid;
+
+    this.machine = Machine({
+      initial: 'ready',
+      context: { ref: this, deviceInfo },
+      states: {
+        ready: {
+          on: {
+            ECO: {
+              target: 'updating',
+            },
+            AUTO: {
+              target: 'updating',
+            },
+          },
+        },
+        updating: {
+          invoke: {
+            src({ ref }, { type }) {
+              const mode = eventMap[type];
+              return Thermostat.updateDeviceState(ref.type, ref.uuid, { mode: eventMap[type] });
+            },
+            onDone: {
+              target: 'ready',
+              actions: [assign({ deviceInfo: (context, event) => event.data })],
+            },
+          },
+        },
+      },
+    });
+
+    this.service = interpret(this.machine).start();
+    this.set(mode);
   }
 
-  // async turn(e) {
-  //   this.service.send(e.toUpperCase());
-  // }
+  async set(e) {
+    this.service.send(e.toUpperCase());
+  }
 
   async ready() {
     if (this.isReady) {
