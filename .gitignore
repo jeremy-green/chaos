@@ -4,8 +4,14 @@ node_modules
 .nyc_output
 coverage
 services/orchestrator/config/local.json
+services/orchestrator/config/local.js
 services/router/config/local.json
+services/router/config/local.js
 services/switches/config/local.json
+services/switches/config/local.js
 services/vacuums/config/local.json
+services/vacuums/config/local.js
 services/weather/config/local.json
+services/weather/config/local.js
 services/wink/config/local.json
+services/wink/config/local.js
