@@ -2,10 +2,16 @@ const EventEmitter = require('events');
 const dns = require('dns');
 const vm = require('vm');
 
+const {
+  Machine, interpret, assign, spawn, send,
+} = require('xstate');
+
 const { promisify } = require('util');
 
 const config = require('config');
 const fetch = require('node-fetch');
+
+const { insert } = require('../datastore');
 
 const lookup = promisify(dns.lookup);
 
@@ -102,29 +108,23 @@ async function handleDelivery(e) {
         confidence,
       });
     }
+
+    await this.save({
+      confidence,
+      name: this.name,
+      router: this.router,
+      location: floorMap[this.router],
+    });
   }
 }
 
-function timer(interval) {
-  setTimeout(async () => {
-    try {
-      const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
-      const url = `http://orbilogin.com/DEV_device_info.htm?ts=${Date.now()}`;
-      const txt = await fetch(url, {
-        headers: { authorization },
-      }).then(res => res.text());
-      vm.runInThisContext(txt); // defines `device` array
-      // eslint-disable-next-line no-undef
-      eventEmitter.emit('delivery', device);
-    } catch (e) {
-      // console.log(e);
-    } finally {
-      timer(interval);
-    }
-  }, interval);
-}
-
 class Orbi extends EventEmitter {
+  static async call() {
+    const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
+    const url = `http://orbilogin.com/DEV_device_info.htm?ts=${Date.now()}`;
+    return fetch(url, { headers: { authorization } }).then(res => res.text());
+  }
+
   constructor(id, name) {
     super();
 
@@ -139,14 +139,78 @@ class Orbi extends EventEmitter {
 
     eventEmitter.on('delivery', handleDelivery.bind(this));
   }
+
+  save(currently) {
+    return insert(currently);
+  }
 }
 
-let init = false;
-module.exports = (interval = defaultInterval) => {
-  if (!init) {
-    init = true;
-    timer(interval);
-  }
+const timerService = new Machine(
+  {
+    id: 'timer-service',
+    context: { interval: defaultInterval },
+    initial: 'inactive',
+    states: {
+      inactive: {
+        on: {
+          ACTIVATE: {
+            target: 'waiting',
+          },
+        },
+      },
+      waiting: {
+        after: {
+          INTERVAL: 'loading',
+        },
+      },
+      loading: {
+        invoke: {
+          async src(context, event) {
+            const txt = await Orbi.call();
+            vm.runInThisContext(txt); // defines `device` array
+            // eslint-disable-next-line no-undef
+            eventEmitter.emit('delivery', device);
+          },
+          onDone: { target: 'waiting' },
+          onError: { target: 'waiting' },
+        },
+      },
+    },
+  },
+  {
+    delays: {
+      INTERVAL: (context, { payload: interval }) => interval,
+    },
+  },
+);
 
+const initializer = interpret(
+  new Machine({
+    initial: 'idle',
+    context: {},
+    states: {
+      idle: {
+        on: {
+          INIT: {
+            target: 'ready',
+          },
+        },
+      },
+      ready: {
+        entry: assign({
+          interval: (context, { payload: { interval } }) => interval,
+          timer: () => spawn(timerService, 'timer'),
+        }),
+        type: 'final',
+      },
+    },
+    onDone: {
+      actions: [send(({ interval }) => ({ type: 'ACTIVATE', payload: interval }), { to: 'timer' })],
+    },
+  }),
+).start();
+
+module.exports = (interval = defaultInterval) => {
+  initializer.send({ type: 'INIT', payload: { interval } });
   return Orbi;
 };

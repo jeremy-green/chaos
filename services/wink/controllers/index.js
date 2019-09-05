@@ -12,7 +12,7 @@ module.exports = (io) => {
     socket.on('update', (settings) => {
       const { state, id } = settings;
       const devices = updateDevices[state];
-      console.log('update', devices, state, id);
+      console.log('update', devices.map(({ name }) => name).join(','), state, id);
       // devices.forEach(device => deviceMap[device].set(state));
     });
   });
