@@ -14,13 +14,13 @@ function insert(currently) {
   return influx.writePoints([
     {
       measurement: 'currently',
-      tags: { service: 'orbi' },
-      fields: {
+      tags: {
+        service: 'orbi',
         name,
-        router,
         location,
-        confidence,
+        router,
       },
+      fields: { confidence },
     },
   ]);
 }

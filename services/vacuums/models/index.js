@@ -77,7 +77,6 @@ let batteryRemaining;
     vacbot.connect_and_wait_until_ready();
   } catch (e) {
     console.log(e);
-    process.exit();
   }
 })();
 
@@ -89,12 +88,12 @@ async function handleVac(vacbot) {
       console.log('Reattempt...');
 
       return new Promise((resolve, reject) => {
-        vacbot.once('ChargeState', (e) => {
-          console.log('ChargeState', e);
-
-          exponentialBackoff.reset();
-          resolve(e);
-        });
+        // vacbot.once('ChargeState', (e) => {
+        //   console.log('ChargeState', e);
+        //
+        //   exponentialBackoff.reset();
+        //   resolve(e);
+        // });
 
         const handleError = (e) => {
           console.log('reattempt:error', e);
@@ -111,10 +110,10 @@ async function handleVac(vacbot) {
           const state = 'clean';
 
           // TODO: needs more thinking through...
-          // if (batteryRemaining < batterTolerance) {
-          //   console.log(`low battery: ${batteryRemaining}...`);
-          //   state = 'charge';
-          // }
+          if (batteryRemaining < batterTolerance) {
+            console.log(`low battery: ${batteryRemaining}...`);
+            state = 'charge';
+          }
 
           vacbot.run(state);
         }, 2000);
