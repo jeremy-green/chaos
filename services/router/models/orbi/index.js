@@ -147,7 +147,6 @@ class Orbi extends EventEmitter {
 
 interpret(
   new Machine({
-    id: 'timer-service',
     initial: 'waiting',
     states: {
       waiting: {
