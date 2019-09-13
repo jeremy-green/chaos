@@ -1,6 +1,6 @@
 const config = require('config');
 
-const Orbi = require('./orbi')();
+const Orbi = require('./orbi');
 
 const { devices } = config;
 

@@ -18,7 +18,7 @@ const lookup = promisify(dns.lookup);
 const eventEmitter = new EventEmitter();
 
 const {
-  routerMap, password, user, confidenceThreshold, sampleSize, defaultInterval,
+  routerMap, password, user, confidenceThreshold, sampleSize, interval,
 } = config;
 
 const floorMap = {
@@ -145,22 +145,14 @@ class Orbi extends EventEmitter {
   }
 }
 
-const timerService = new Machine(
-  {
+interpret(
+  new Machine({
     id: 'timer-service',
-    context: { interval: defaultInterval },
-    initial: 'inactive',
+    initial: 'waiting',
     states: {
-      inactive: {
-        on: {
-          ACTIVATE: {
-            target: 'waiting',
-          },
-        },
-      },
       waiting: {
         after: {
-          INTERVAL: 'loading',
+          [interval]: 'loading',
         },
       },
       loading: {
@@ -176,41 +168,7 @@ const timerService = new Machine(
         },
       },
     },
-  },
-  {
-    delays: {
-      INTERVAL: (context, { payload: interval }) => interval,
-    },
-  },
-);
-
-const initializer = interpret(
-  new Machine({
-    initial: 'idle',
-    context: {},
-    states: {
-      idle: {
-        on: {
-          INIT: {
-            target: 'ready',
-          },
-        },
-      },
-      ready: {
-        entry: assign({
-          interval: (context, { payload: { interval } }) => interval,
-          timer: () => spawn(timerService, 'timer'),
-        }),
-        type: 'final',
-      },
-    },
-    onDone: {
-      actions: [send(({ interval }) => ({ type: 'ACTIVATE', payload: interval }), { to: 'timer' })],
-    },
   }),
 ).start();
 
-module.exports = (interval = defaultInterval) => {
-  initializer.send({ type: 'INIT', payload: { interval } });
-  return Orbi;
-};
+module.exports = Orbi;
