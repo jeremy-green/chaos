@@ -6,6 +6,7 @@
     "start": "nodemon app"
   },
   "dependencies": {
+    "@chaos/functions": "^0.0.0",
     "config": "^3.2.2",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",

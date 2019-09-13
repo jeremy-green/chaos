@@ -2,6 +2,8 @@ const EventEmitter = require('events');
 
 const { Machine, interpret } = require('xstate');
 
+const { machineName } = require('@chaos/functions');
+
 const stateMap = {
   0: 'off',
   1: 'on',
@@ -16,12 +18,7 @@ class Switch extends EventEmitter {
   constructor(name, state = 0) {
     super();
     this.name = name;
-    // https://gist.github.com/thevangelist/8ff91bac947018c9f3bfaad6487fa149#gistcomment-2986430
-    this.machineName = this.name
-      .match(/[A-Z]{2,}(?=[A-Z][a-z0-9]*|\b)|[A-Z]?[a-z0-9]*|[A-Z]|[0-9]+/g)
-      .filter(Boolean)
-      .map(x => x.toLowerCase())
-      .join('-');
+    this.machineName = machineName(name);
 
     this.service = interpret(
       new Machine({
