@@ -2,14 +2,14 @@ const EventEmitter = require('events');
 const dns = require('dns');
 const vm = require('vm');
 
-const {
-  Machine, interpret, assign, spawn, send,
-} = require('xstate');
-
 const { promisify } = require('util');
 
 const config = require('config');
 const fetch = require('node-fetch');
+
+const {
+  Machine, interpret, assign, spawn, send,
+} = require('xstate');
 
 const { insert } = require('../datastore');
 
