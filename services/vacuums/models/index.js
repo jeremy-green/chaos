@@ -17,7 +17,7 @@ const api = new EcoVacsAPI(device_id, country, continent);
 const accountId = email;
 const passwordHash = EcoVacsAPI.md5(password);
 
-const exponentialBackoff = backoff.exponential({ initialDelay: delay });
+const exponentialBackoff = backoff.exponential({ initialDelay: 60000, maxDelay: 60 * 60000 });
 exponentialBackoff.failAfter(times);
 
 let batteryRemaining;
@@ -107,10 +107,10 @@ async function handleVac(vacbot) {
 
         vacbot.on('error', handleError);
         setTimeout(() => {
-          const state = 'clean';
+          let state = 'clean';
 
           // TODO: needs more thinking through...
-          if (batteryRemaining < batterTolerance) {
+          if (batteryRemaining <= batterTolerance) {
             console.log(`low battery: ${batteryRemaining}...`);
             state = 'charge';
           }
@@ -122,18 +122,17 @@ async function handleVac(vacbot) {
   } catch (e) {
     console.log('exponentialBackoff:error', e);
 
-    exponentialBackoff.on('ready', () => {
+    exponentialBackoff.once('ready', () => {
       console.log('exponentialBackoff:ready');
 
       handleVac(vacbot);
-      // exponentialBackoff.backoff();
     });
 
-    exponentialBackoff.on('fail', () => {
+    exponentialBackoff.once('fail', () => {
       console.log('exponentialBackoff:fail');
     });
 
-    exponentialBackoff.on('backoff', () => {
+    exponentialBackoff.once('backoff', () => {
       console.log('exponentialBackoff:backoff');
     });
 
