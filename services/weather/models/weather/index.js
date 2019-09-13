@@ -23,7 +23,7 @@ class Weather {
             on: {
               PRECIPITATION: { target: 'precipitation', actions: ['notify'] },
               NO_PRECIPITATION: { target: 'no_precipitation', actions: ['notify'] },
-              REJECTED: { target: 'rejected', actions: ['rejected'] },
+              REJECTED: { target: 'boot', actions: ['rejected'] },
             },
           },
           no_precipitation: {
