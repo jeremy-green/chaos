@@ -1,63 +1,74 @@
-const { Machine, interpret } = require('xstate');
+const { Machine, interpret, assign } = require('xstate');
 
 const Wink = require('../wink');
 
-const { stateMap: binaryStateMap, machine: binaryMachine, getLoadingState } = require('./state');
+const stateMap = {
+  ON: true,
+  OFF: false,
+};
 
 class BinarySwitch extends Wink {
+  #isReady = false;
+
+  #service = null;
+
   constructor(name) {
     super();
 
+    this.uuid = null;
     this.name = name;
     this.type = 'binary_switches';
-    this.uuid = null;
-    this.isReady = false;
     this.readyTimeout = 60000;
   }
 
   initializeDevice(data) {
     const deviceInfo = Wink.getDeviceInfo(data, this.name);
-    const {
-      uuid,
-      desired_state: { powered },
-    } = deviceInfo;
+    const { uuid } = deviceInfo;
 
     this.uuid = uuid;
-
-    const initial = powered === true ? 'up' : 'down';
-    const context = { ref: this, deviceInfo };
-    const src = ({ ref }, event) => Wink.updateDeviceState(ref.type, ref.uuid, {
-      powered: binaryStateMap[event.type],
-    });
-    const offLoading = getLoadingState('down', 'up', src);
-    const onLoading = getLoadingState('up', 'down', src);
-    binaryMachine.states = {
-      ...binaryMachine.states,
-      offLoading,
-      onLoading,
-    };
-
-    this.machine = Machine({
-      ...binaryMachine,
-      initial,
-      context,
-    });
-
-    this.service = interpret(this.machine).start();
+    this.#service = interpret(
+      new Machine({
+        id: 'binary-switch',
+        initial: 'ready',
+        context: {
+          ref: this,
+          deviceInfo,
+        },
+        states: {
+          ready: {
+            on: {
+              OFF: 'loading',
+              ON: 'loading',
+            },
+          },
+          loading: {
+            invoke: {
+              src: ({ ref }, event) => Wink.updateDeviceState(ref.type, ref.uuid, {
+                powered: stateMap[event.type],
+              }),
+            },
+            onDone: {
+              target: 'ready',
+              actions: assign({ deviceInfo: (context, event) => event.data }),
+            },
+          },
+        },
+      }),
+    ).start();
   }
 
   async turn(e) {
-    this.service.send(e.toUpperCase());
+    this.#service.send(e.toUpperCase());
   }
 
   async ready() {
-    if (this.isReady) {
+    if (this.#isReady) {
       return Promise.resolve();
     }
 
     return new Promise((resolve, reject) => {
-      this.on('ready', (data) => {
-        this.isReady = true;
+      this.once('ready', (data) => {
+        this.#isReady = true;
         this.initializeDevice(data);
         resolve();
       });
