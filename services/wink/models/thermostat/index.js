@@ -15,13 +15,16 @@ function entry({ ref }, { type }) {
 }
 
 class Thermostat extends Wink {
+  #isReady = false;
+
+  #service = null;
+
   constructor(name) {
     super();
 
+    this.uuid = null;
     this.name = name;
     this.type = 'thermostats';
-    this.uuid = null;
-    this.isReady = false;
     this.readyTimeout = 60000;
   }
 
@@ -33,52 +36,47 @@ class Thermostat extends Wink {
     } = deviceInfo;
 
     this.uuid = uuid;
-
-    this.machine = Machine({
-      initial: 'ready',
-      context: { ref: this, deviceInfo },
-      states: {
-        ready: {
-          on: {
-            ECO: {
-              target: 'updating',
+    this.#service = interpret(
+      new Machine({
+        initial: 'ready',
+        context: { ref: this, deviceInfo },
+        states: {
+          ready: {
+            on: {
+              ECO: 'updating',
+              AUTO: 'updating',
             },
-            AUTO: {
-              target: 'updating',
+          },
+          updating: {
+            invoke: {
+              src({ ref }, { type }) {
+                const mode = eventMap[type];
+                return Thermostat.updateDeviceState(ref.type, ref.uuid, { mode: eventMap[type] });
+              },
+              onDone: {
+                target: 'ready',
+                actions: [assign({ deviceInfo: (context, event) => event.data })],
+              },
             },
           },
         },
-        updating: {
-          invoke: {
-            src({ ref }, { type }) {
-              const mode = eventMap[type];
-              return Thermostat.updateDeviceState(ref.type, ref.uuid, { mode: eventMap[type] });
-            },
-            onDone: {
-              target: 'ready',
-              actions: [assign({ deviceInfo: (context, event) => event.data })],
-            },
-          },
-        },
-      },
-    });
-
-    this.service = interpret(this.machine).start();
+      }),
+    ).start();
     this.set(mode);
   }
 
   async set(e) {
-    this.service.send(e.toUpperCase());
+    this.#service.send(e.toUpperCase());
   }
 
   async ready() {
-    if (this.isReady) {
+    if (this.#isReady) {
       return Promise.resolve();
     }
 
     return new Promise((resolve, reject) => {
       this.on('ready', (data) => {
-        this.isReady = true;
+        this.#isReady = true;
         this.initializeDevice(data);
         resolve();
       });
