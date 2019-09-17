@@ -41,50 +41,40 @@ class Wink extends EventEmitter {
 
 interpret(
   new Machine({
-    id: 'wink-initializer',
-    initial: 'idle',
+    id: 'initializer',
+    initial: 'getToken',
     context: { ...credentials },
     states: {
-      idle: {
-        on: {
-          '': 'bootstrap',
+      getToken: {
+        invoke: {
+          src: ({
+            clientId, clientSecret, grantType, refreshToken,
+          }) => fetch('https://api.wink.com/oauth2/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              client_id: clientId,
+              client_secret: clientSecret,
+              grant_type: grantType,
+              refresh_token: refreshToken,
+            }),
+          }).then(r => r.json()),
+          onDone: {
+            target: 'getDevices',
+            actions: [
+              (context, { data: { access_token: accessToken } }) => Wink.setAccessToken(accessToken),
+            ],
+          },
+          onError: { target: 'getToken' },
         },
       },
-      bootstrap: {
-        initial: 'getToken',
-        states: {
-          getToken: {
-            invoke: {
-              src: ({
-                clientId, clientSecret, grantType, refreshToken,
-              }) => fetch('https://api.wink.com/oauth2/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  client_id: clientId,
-                  client_secret: clientSecret,
-                  grant_type: grantType,
-                  refresh_token: refreshToken,
-                }),
-              }).then(r => r.json()),
-              onDone: {
-                target: 'getDevices',
-                actions: [
-                  (context, { data: { access_token: accessToken } }) => Wink.setAccessToken(accessToken),
-                ],
-              },
-              onError: { target: '#wink-initializer.idle' },
-            },
-          },
-          getDevices: {
-            invoke: {
-              src: (context, { data: { access_token: accessToken } }) => fetch('https://api.wink.com/users/me/wink_devices', {
-                headers: { authorization: `Bearer ${accessToken}` },
-              }).then(response => response.json()),
-              onDone: { target: '#wink-initializer.ready' },
-              onError: { target: '#wink-initializer.idle' },
-            },
-          },
+      getDevices: {
+        invoke: {
+          src: (context, { data: { access_token: accessToken } }) => fetch('https://api.wink.com/users/me/wink_devices', {
+            headers: { authorization: `Bearer ${accessToken}` },
+          }).then(response => response.json()),
+          onDone: { target: 'ready' },
+          onError: { target: 'getDevices' },
         },
       },
       ready: {
