@@ -49,7 +49,7 @@ async function getAddress(id) {
   try {
     const { address } = await lookup(id);
     return address;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
