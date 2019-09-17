@@ -18,8 +18,8 @@ class Wink extends EventEmitter {
     eventEmitter.on('data', data => this.emit('ready', data));
   }
 
-  static setAccessToken(token) {
-    Wink.accessToken = token;
+  static setAccessToken(accessToken) {
+    Wink.accessToken = accessToken;
   }
 
   static getDeviceInfo(data, deviceName) {
