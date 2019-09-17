@@ -88,12 +88,16 @@ async function handleVac(vacbot) {
       console.log('Reattempt...');
 
       return new Promise((resolve, reject) => {
-        // vacbot.once('ChargeState', (e) => {
-        //   console.log('ChargeState', e);
-        //
-        //   exponentialBackoff.reset();
-        //   resolve(e);
-        // });
+        const handleCharging = (e) => {
+          console.log('ChargeState', e);
+
+          if (e === 'charging') {
+            exponentialBackoff.reset();
+            resolve(e);
+          }
+        };
+
+        vacbot.removeListener('ChargeState', handleCharging).on('ChargeState', handleCharging);
 
         const handleError = (e) => {
           console.log('reattempt:error', e);
