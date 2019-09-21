@@ -3,7 +3,7 @@ const EventEmitter = require('events');
 const config = require('config');
 const fetch = require('node-fetch');
 
-const { Machine, interpret } = require('xstate');
+const { Machine, interpret, assign } = require('xstate');
 
 const credentials = config.get('credentials');
 
@@ -62,6 +62,12 @@ interpret(
           onDone: {
             target: 'getDevices',
             actions: [
+              assign({
+                clientId: null,
+                clientSecret: null,
+                grantType: null,
+                refreshToken: null,
+              }),
               (context, { data: { access_token: accessToken } }) => Wink.setAccessToken(accessToken),
             ],
           },

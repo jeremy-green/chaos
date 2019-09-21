@@ -9,11 +9,6 @@ const eventMap = {
   AUTO: 'auto',
 };
 
-function entry({ ref }, { type }) {
-  const mode = eventMap[type];
-  return Thermostat.updateDeviceState(ref.type, ref.uuid, { mode });
-}
-
 class Thermostat extends Wink {
   #isReady = false;
 
@@ -30,16 +25,13 @@ class Thermostat extends Wink {
 
   initializeDevice(data) {
     const deviceInfo = Wink.getDeviceInfo(data, this.name);
-    const {
-      uuid,
-      desired_state: { mode },
-    } = deviceInfo;
+    const { uuid } = deviceInfo;
 
     this.uuid = uuid;
     this.#service = interpret(
       new Machine({
         initial: 'ready',
-        context: { ref: this, deviceInfo },
+        context: { ref: this },
         states: {
           ready: {
             on: {
@@ -49,20 +41,13 @@ class Thermostat extends Wink {
           },
           updating: {
             invoke: {
-              src({ ref }, { type }) {
-                const mode = eventMap[type];
-                return Thermostat.updateDeviceState(ref.type, ref.uuid, { mode: eventMap[type] });
-              },
-              onDone: {
-                target: 'ready',
-                actions: [assign({ deviceInfo: (context, event) => event.data })],
-              },
+              src: ({ ref }, { type }) => Thermostat.updateDeviceState(ref.type, ref.uuid, { mode: eventMap[type] }),
+              onDone: { target: 'ready' },
             },
           },
         },
       }),
     ).start();
-    this.set(mode);
   }
 
   async set(e) {
