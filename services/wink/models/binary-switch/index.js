@@ -22,18 +22,14 @@ class BinarySwitch extends Wink {
   }
 
   initializeDevice(data) {
-    const deviceInfo = Wink.getDeviceInfo(data, this.name);
-    const { uuid } = deviceInfo;
+    const { uuid } = Wink.getDeviceInfo(data, this.name);
 
     this.uuid = uuid;
     this.#service = interpret(
       new Machine({
         id: 'binary-switch',
         initial: 'ready',
-        context: {
-          ref: this,
-          deviceInfo,
-        },
+        context: { ref: this },
         states: {
           ready: {
             on: {
@@ -43,14 +39,9 @@ class BinarySwitch extends Wink {
           },
           loading: {
             invoke: {
-              src: ({ ref }, event) => Wink.updateDeviceState(ref.type, ref.uuid, {
-                powered: stateMap[event.type],
-              }),
+              src: ({ ref: { type, uuid } }, { type: eventType }) => Wink.updateDeviceState(type, uuid, { powered: stateMap[eventType] }),
             },
-            onDone: {
-              target: 'ready',
-              actions: assign({ deviceInfo: (context, event) => event.data }),
-            },
+            onDone: { target: 'ready' },
           },
         },
       }),

@@ -24,8 +24,7 @@ class Thermostat extends Wink {
   }
 
   initializeDevice(data) {
-    const deviceInfo = Wink.getDeviceInfo(data, this.name);
-    const { uuid } = deviceInfo;
+    const { uuid } = Wink.getDeviceInfo(data, this.name);
 
     this.uuid = uuid;
     this.#service = interpret(
@@ -41,7 +40,7 @@ class Thermostat extends Wink {
           },
           updating: {
             invoke: {
-              src: ({ ref }, { type }) => Thermostat.updateDeviceState(ref.type, ref.uuid, { mode: eventMap[type] }),
+              src: ({ ref: { type, uuid } }, { type: eventType }) => Thermostat.updateDeviceState(type, uuid, { mode: eventMap[eventType] }),
               onDone: { target: 'ready' },
             },
           },
