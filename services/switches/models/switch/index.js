@@ -17,6 +17,7 @@ const statusMap = {
 class Switch extends EventEmitter {
   constructor(name, state = 0) {
     super();
+
     this.name = name;
     this.machineName = machineName(name);
 
