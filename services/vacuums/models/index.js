@@ -97,7 +97,8 @@ async function handleVac(vacbot) {
           }
         };
 
-        vacbot.removeListener('ChargeState', handleCharging).on('ChargeState', handleCharging);
+        vacbot.removeListener('ChargeState', handleCharging);
+        vacbot.on('ChargeState', handleCharging);
 
         const handleError = (e) => {
           console.log('reattempt:error', e);
