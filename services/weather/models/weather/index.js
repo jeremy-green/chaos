@@ -2,15 +2,22 @@ const EventEmitter = require('events');
 
 const config = require('config');
 const fetch = require('node-fetch');
-const { Machine, interpret, assign } = require('xstate');
+
+const {
+  Machine, interpret, assign, actions,
+} = require('xstate');
 
 const { insert } = require('../datastore');
 
-const eventEmitter = new EventEmitter();
+const { log } = actions;
+
+const precipitationMap = { true: 'precipitation', false: 'no_precipitation' };
 
 const {
   apiKey, latlng, maxCallsPerDay, precipProbabilityThreshold,
 } = config;
+
+const eventEmitter = new EventEmitter();
 
 class Weather {
   static #service = interpret(
@@ -42,12 +49,8 @@ class Weather {
       },
       {
         actions: {
-          notify(context, { status, currently }) {
-            Weather.emit('precipitation', { status, currently });
-          },
-          rejected(context, event) {
-            console.log('rejected', context, event);
-          },
+          notify: (context, { status, currently }) => Weather.emit('precipitation', { status, currently }),
+          rejected: log((context, event) => ({ context, event })),
         },
       },
     ),
@@ -79,55 +82,49 @@ interpret(
     {
       id: 'service',
       context: {
-        date: new Date().getDate(),
-        index: maxCallsPerDay,
         status: null,
       },
-      initial: 'idle',
+      initial: 'wait',
       states: {
-        idle: {
+        wait: {
           after: {
-            INTERVAL: 'loading',
+            INTERVAL: 'load',
           },
         },
-        loading: {
+        load: {
           invoke: {
-            async src({ date, index }) {
-              const { currently } = await Weather.call(apiKey, latlng);
-              const { precipProbability } = currently;
-
-              const isPrecipitating = precipProbability > precipProbabilityThreshold;
-              const status = isPrecipitating ? 'precipitation' : 'no_precipitation';
-
-              const todaysDate = new Date().getDate();
-              const indexDate = date !== todaysDate
-                ? { index: maxCallsPerDay, date: todaysDate }
-                : { index: index - 1, date };
-
-              console.log(indexDate, currently, status);
-
-              return { ...indexDate, status, currently };
-            },
-            onDone: {
-              target: 'idle',
-              actions: [
-                assign({
-                  index: (context, { data: { index } }) => index,
-                  date: (context, { data: { date } }) => date,
-                }),
-                (context, { data: { status, currently } }) => Weather.update(status, { status, currently }),
-                (context, { data: { currently } }) => Weather.save(currently),
-              ],
-            },
-            onError: {
-              target: 'idle',
-              actions: () => console.log('error'),
+            src: () => Weather.call(apiKey, latlng),
+            onDone: { target: 'update', actions: ['updateStatus', 'logResponse'] },
+            onError: { target: 'wait', actions: ['logError'] },
+          },
+        },
+        update: {
+          on: {
+            '': {
+              target: 'wait',
+              actions: ['sendStatusUpdate', 'saveResponse'],
             },
           },
         },
       },
     },
     {
+      actions: {
+        sendStatusUpdate: ({ status }, { data: { currently } }) => Weather.update(status, { status, currently }),
+        saveResponse: (context, { data: { currently } }) => Weather.save(currently),
+        logResponse: log(({ status }, { data: { currently } }) => ({ status, currently })),
+        logError: log((context, event) => ({ context, event })),
+        updateStatus: assign({
+          status: (
+            context,
+            {
+              data: {
+                currently: { precipProbability },
+              },
+            },
+          ) => precipitationMap[precipProbability >= precipProbabilityThreshold],
+        }),
+      },
       delays: {
         INTERVAL: Math.floor((24 * 60 * 60 * 1000) / maxCallsPerDay),
       },
