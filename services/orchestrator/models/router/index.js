@@ -12,13 +12,13 @@ class Router {
     states: {
       bootstrap: {
         invoke: {
-          src: () => new Promise(resolve => this.#connection.once('connect', () => resolve())).then(() => console.log('router:connect')),
+          src: () => new Promise(resolve => this.#connection.once('connect', resolve)).then(() => console.log('router:connect')),
           onDone: { target: 'enabled' },
         },
       },
       enabled: {
         invoke: {
-          src: () => new Promise(resolve => this.#connection.once('change', data => resolve(data))),
+          src: () => new Promise(resolve => this.#connection.once('change', resolve)),
           onDone: {
             target: 'enabled',
             actions: [(context, event) => console.log(context, event)],

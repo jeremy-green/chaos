@@ -10,15 +10,15 @@ class Wink {
       id: 'wink',
       initial: 'bootstrap',
       context: {
-        POWER_ON: { state: 'on' },
-        POWER_OFF: { state: 'off' },
-        SET_AUTO: { state: 'auto' },
-        SET_ECO: { state: 'eco' },
+        POWER_ON: 'on',
+        POWER_OFF: 'off',
+        SET_AUTO: 'auto',
+        SET_ECO: 'eco',
       },
       states: {
         bootstrap: {
           invoke: {
-            src: () => new Promise(resolve => this.#connection.once('connect', () => resolve())).then(() => console.log('wink:connect')),
+            src: () => new Promise(resolve => this.#connection.once('connect', resolve)).then(() => console.log('wink:connect')),
             onDone: {
               target: 'enabled',
             },
@@ -39,14 +39,8 @@ class Wink {
     },
     {
       actions: {
-        power: (context, { type, data }) => {
-          const { state } = context[type];
-          this.#connection.emit('power', { state });
-        },
-        change: (context, { type }) => {
-          const { state } = context[type];
-          this.#connection.emit('update', { state });
-        },
+        power: (context, { type }) => this.#connection.emit('power', { state: context[type] }),
+        change: (context, { type }) => this.#connection.emit('update', { state: context[type] }),
       },
     },
   );

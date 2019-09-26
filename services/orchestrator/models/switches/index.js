@@ -12,7 +12,7 @@ class Switches {
     states: {
       bootstrap: {
         invoke: {
-          src: () => new Promise(resolve => this.#connection.once('connect', () => resolve())).then(() => console.log('switches:connect')),
+          src: () => new Promise(resolve => this.#connection.once('connect', resolve)).then(() => console.log('switches:connect')),
           onDone: { target: 'enabled' },
         },
       },

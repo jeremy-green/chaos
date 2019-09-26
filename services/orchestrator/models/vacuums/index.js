@@ -16,7 +16,7 @@ class Vacuums {
       states: {
         bootstrap: {
           invoke: {
-            src: () => new Promise(resolve => this.#connection.once('connect', () => resolve())).then(() => console.log('vacuums:connect')),
+            src: () => new Promise(resolve => this.#connection.once('connect', resolve)).then(() => console.log('vacuums:connect')),
             onDone: { target: 'enabled' },
           },
         },

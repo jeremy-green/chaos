@@ -12,7 +12,7 @@ class Weather {
     states: {
       bootstrap: {
         invoke: {
-          src: () => new Promise(resolve => this.#connection.once('connect', () => resolve())).then(() => console.log('weather:connect')),
+          src: () => new Promise(resolve => this.#connection.once('connect', resolve)).then(() => console.log('weather:connect')),
           onDone: { target: 'enabled' },
         },
       },
