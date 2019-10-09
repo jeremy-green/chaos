@@ -23,6 +23,7 @@ const updateDevices = {
 
 interpret(
   new Machine({
+    id: 'initializer',
     initial: 'bootstrap',
     states: {
       bootstrap: {
