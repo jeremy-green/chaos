@@ -2,8 +2,6 @@ const EventEmitter = require('events');
 
 const { Machine, interpret } = require('xstate');
 
-const { machineName } = require('@chaos/functions');
-
 const stateMap = {
   0: 'off',
   1: 'on',
@@ -19,11 +17,10 @@ class Switch extends EventEmitter {
     super();
 
     this.name = name;
-    this.machineName = machineName(name);
 
     this.service = interpret(
       new Machine({
-        id: `switch-${this.machineName}`,
+        id: 'switch',
         initial: stateMap[state],
         context: {},
         states: {
