@@ -7,9 +7,7 @@ const { promisify } = require('util');
 const config = require('config');
 const fetch = require('node-fetch');
 
-const {
-  Machine, interpret, assign, spawn, send,
-} = require('xstate');
+const { Machine, interpret } = require('xstate');
 
 const { insert } = require('../datastore');
 
@@ -26,7 +24,7 @@ const floorMap = {
   [routerMap.UPSTAIRS]: 'upstairs',
   [routerMap.DOWNSTAIRS]: 'downstairs',
   [routerMap.BASEMENT]: 'basement',
-  undefined: 'off network',
+  undefined: 'off_network',
 };
 
 // https://stackoverflow.com/questions/17313268/idiomatically-find-the-number-of-occurrences-a-given-value-has-in-an-array
@@ -63,66 +61,15 @@ function getDeviceStatusByAddress(devices, address) {
   }, {});
 }
 
-async function handleDelivery(e) {
-  this.address = await getAddress(this.id);
-  this.status = getDeviceStatusByAddress(e, this.address);
-
-  const { conn_orbi_name: router } = this.status;
-
-  if (!this.router) {
-    this.router = router;
-    this.emit('assigned', {
-      router: this.router,
-      name: this.name,
-      location: floorMap[this.router],
-      confidence: 1,
-    });
-  }
-
-  this.counter.add(router);
-  this.index += 1;
-
-  if (this.index === sampleSize) {
-    // get the highest number of occurrences
-    const [[highestInstance, highestCount]] = [...Array.from(this.counter.entries())].sort(
-      (a, b) => b[1] - a[1],
-    );
-    const confidence = highestCount / sampleSize;
-
-    console.log(confidence, this.name, this.router, highestInstance);
-
-    this.counter = new Counter([]);
-    this.index = 0;
-
-    // @todo ugly, refactor
-    if (
-      confidence >= confidenceThreshold
-      && highestInstance !== this.router
-      && highestInstance !== routerMap.UNKNOWN
-    ) {
-      this.router = highestInstance;
-      this.emit('change', {
-        router: this.router,
-        name: this.name,
-        location: floorMap[this.router],
-        confidence,
-      });
-    }
-
-    await this.save({
-      confidence,
-      name: this.name,
-      router: this.router,
-      location: floorMap[this.router],
-    });
-  }
-}
-
 class Orbi extends EventEmitter {
-  static async call() {
+  static call() {
     const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
     const url = `http://orbilogin.com/DEV_device_info.htm?ts=${Date.now()}`;
     return fetch(url, { headers: { authorization } }).then(res => res.text());
+  }
+
+  static emit(name, data) {
+    eventEmitter.emit(name, data);
   }
 
   constructor(id, name) {
@@ -130,44 +77,69 @@ class Orbi extends EventEmitter {
 
     this.id = id;
     this.name = name;
-    this.router = null;
-    this.status = null;
-    this.address = null;
 
     this.counter = new Counter([]);
     this.index = 0;
 
-    eventEmitter.on('delivery', handleDelivery.bind(this));
+    this.service = interpret(
+      new Machine({
+        id: 'orbi',
+        initial: 'unknown',
+        context: { confidence: null },
+        states: Object.values(floorMap).reduce((acc, curr, index, source) => {
+          const excluded = source.filter(item => item !== curr);
+          acc[curr] = {
+            entry: (context, { router, confidence }) => this.emit('change', {
+              name: this.name,
+              location: floorMap[router],
+              router,
+              confidence,
+            }),
+            on: excluded.reduce((a, c) => {
+              c === 'unknown'
+                ? (a[c.toUpperCase()] = undefined)
+                : (a[c.toUpperCase()] = { target: c });
+              return { ...a };
+            }, {}),
+          };
+          return { ...acc };
+        }, {}),
+      }),
+    ).start();
+
+    eventEmitter.on('delivery', devices => this.handleDelivery(devices));
   }
 
-  save(currently) {
-    return insert(currently);
+  async handleDelivery(devices) {
+    const address = await getAddress(this.id);
+    const { conn_orbi_name: router } = getDeviceStatusByAddress(devices, address);
+
+    this.counter.add(router);
+    this.index += 1;
+
+    if (this.index === sampleSize) {
+      // get the highest number of occurrences
+      const [[highestInstance, highestCount]] = [...Array.from(this.counter.entries())].sort(
+        (a, b) => b[1] - a[1],
+      );
+      const confidence = highestCount / sampleSize;
+
+      this.counter = new Counter([]);
+      this.index = 0;
+
+      if (confidence >= confidenceThreshold) {
+        this.service.send(floorMap[highestInstance].toUpperCase(), { confidence, router });
+        console.log(`Current state: ${this.service.state.value} for ${this.name}`);
+      }
+
+      await insert({
+        name: this.name,
+        location: floorMap[router],
+        confidence,
+        router,
+      });
+    }
   }
 }
-
-interpret(
-  new Machine({
-    initial: 'waiting',
-    states: {
-      waiting: {
-        after: {
-          [interval]: 'loading',
-        },
-      },
-      loading: {
-        invoke: {
-          async src(context, event) {
-            const txt = await Orbi.call();
-            vm.runInThisContext(txt); // defines `device` array
-            // eslint-disable-next-line no-undef
-            eventEmitter.emit('delivery', device);
-          },
-          onDone: { target: 'waiting' },
-          onError: { target: 'waiting' },
-        },
-      },
-    },
-  }),
-).start();
 
 module.exports = Orbi;
