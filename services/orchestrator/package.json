@@ -6,7 +6,7 @@
     "start": "node app"
   },
   "dependencies": {
-    "@hapi/joi": "^15.1.0",
+    "@hapi/joi": "^15.1.1",
     "celebrate": "^10.0.1",
     "config": "^3.2.2",
     "cookie-parser": "~1.4.4",
