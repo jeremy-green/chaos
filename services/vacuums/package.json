@@ -17,7 +17,7 @@
     "node-machine-id": "^1.1.12",
     "nodemon": "^1.19.1",
     "reattempt": "^0.1.0",
-    "socket.io": "^2.2.0",
+    "socket.io": "^2.5.0",
     "sucks": "github:jeremy-green/sucks.js#master",
     "uuid": "^3.3.2",
     "xstate": "^4.6.7"
