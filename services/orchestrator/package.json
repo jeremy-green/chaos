@@ -11,7 +11,7 @@
     "config": "^3.2.2",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
-    "express": "~4.16.1",
+    "express": "~4.17.3",
     "express-rate-limit": "^5.0.0",
     "got": "^9.6.0",
     "http-errors": "~1.6.3",
